@@ -11,8 +11,6 @@
     @endif
 
     <x-settings-card :title="__('Roles from Google')">
-        <p class="text-gray-600 dark:text-gray-400">{{ __('Give a role to a Google user, a Google Group\'s members, or the people in an OU. Each night, people who match get an account and the role, and people who left the group or OU, or were suspended, lose it. Roles given by hand on the Users tab are left alone.') }}</p>
-
         @if ($rules->isNotEmpty())
             <ul class="divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
                 @foreach ($rules as $rule)
