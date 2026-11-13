@@ -8,7 +8,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use TornadoEngine\Access\Models\Role;
 use TornadoEngine\AccessGoogle\Models\Rule;
-use TornadoEngine\Broker\Models\Person;
 use TornadoEngine\Cron\Cron;
 use TornadoEngine\Cron\Models\CronJob;
 use TornadoEngine\Gam\Gam;
@@ -34,7 +33,6 @@ class AccessGoogleTest extends TestCase
     {
         parent::setUp();
         Setting::put('google.domain', 'school.test');
-        Setting::put('access_google.skip_students', '0'); // The student test turns it back on.
 
         $test = $this;
         $this->app->instance(Gam::class, new class($test) extends Gam
@@ -161,27 +159,6 @@ class AccessGoogleTest extends TestCase
             ->assertSessionHasErrors(['sync' => 'The sync failed, so nothing changed: GAM is busy with other commands. Try again in a moment.']);
     }
 
-    public function test_students_are_skipped_using_the_brokers_directory(): void
-    {
-        $teachers = Role::create(['name' => 'Teachers']);
-        Rule::create(['role_id' => $teachers->id, 'type' => 'group', 'value' => 'teachers@school.test']);
-        Setting::put('access_google.skip_students', '1');
-
-        // Without a loaded directory, the sync refuses rather than guess who the students are.
-        $this->assertFalse($this->sync());
-        $this->assertSame([], $this->rolesOf('ann@school.test'));
-
-        Setting::put('broker.refreshed_at', now()->toIso8601String());
-        Person::create(['kind' => 'student', 'email' => 'wm30kid@school.test', 'pseudonym' => 's-0000000001@student', 'values' => []]);
-        $this->assertTrue($this->sync());
-        $this->assertSame(['Teachers'], $this->rolesOf('ann@school.test'));
-        $this->assertNull(User::where('email', 'wm30kid@school.test')->first());
-
-        $this->actingAs($this->manager())->post('/access/google/students', ['skip_students' => '0']);
-        $this->sync();
-        $this->assertSame(['Teachers'], $this->rolesOf('wm30kid@school.test'));
-    }
-
     public function test_rules_are_checked_with_google_before_theyre_added(): void
     {
         $role = Role::create(['name' => 'Teachers']);
@@ -198,8 +175,7 @@ class AccessGoogleTest extends TestCase
         $this->actingAs($manager)->get('/access/google')
             ->assertOk()
             ->assertSee('Roles from Google')
-            ->assertSee('/Staff')
-            ->assertSee('Never give roles to students');
+            ->assertSee('/Staff');
     }
 
     public function test_only_people_who_manage_access_can_open_it(): void

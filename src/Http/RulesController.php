@@ -2,7 +2,6 @@
 
 namespace TornadoEngine\AccessGoogle\Http;
 
-use App\Models\Setting;
 use App\Support\GoogleSignIn;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -91,12 +90,5 @@ class RulesController extends Controller
         return $ok
             ? back()->with('status', __('Synced. :summary', ['summary' => $message]))
             : back()->withErrors(['sync' => __('The sync failed, so nothing changed: :reason', ['reason' => $message])]);
-    }
-
-    public function students(Request $request): RedirectResponse
-    {
-        Setting::put('access_google.skip_students', $request->boolean('skip_students') ? '1' : '0');
-
-        return back()->with('status', __('Saved.'));
     }
 }

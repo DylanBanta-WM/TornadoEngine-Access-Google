@@ -2,13 +2,10 @@
 
 namespace TornadoEngine\AccessGoogle;
 
-use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 use TornadoEngine\Access\Access;
 use TornadoEngine\AccessGoogle\Models\Rule;
-use TornadoEngine\Broker\Models\Person;
 use TornadoEngine\Gam\Gam;
 
 /**
@@ -19,17 +16,6 @@ use TornadoEngine\Gam\Gam;
 class Sync
 {
     public function __construct(private Gam $gam, private Access $access) {}
-
-    /** Whether students are left out (only with the Broker module, which knows who they are). */
-    public static function skipsStudents(): bool
-    {
-        return self::brokerInstalled() && Setting::get('access_google.skip_students') !== '0';
-    }
-
-    public static function brokerInstalled(): bool
-    {
-        return class_exists(Person::class);
-    }
 
     /**
      * @return string A summary, for example "312 people matched. Gave 4 roles, took back 1."
@@ -45,8 +31,6 @@ class Sync
             $people[$person['email']] = $person;
         }
 
-        $students = self::skipsStudents() ? $this->students() : [];
-
         // Who should have each role: [role id => [email => true]].
         $wanted = [];
         $matched = [];
@@ -56,7 +40,7 @@ class Sync
                 'group' => $gam->groupMembers($rule->value),
                 'ou' => array_keys(array_filter($people, fn ($person) => $rule->coversOu($person['ou']))),
             };
-            $emails = array_filter($emails, fn ($email) => isset($people[$email]) && ! isset($students[$email]));
+            $emails = array_filter($emails, fn ($email) => isset($people[$email]));
 
             $matched[$rule->id] = count($emails);
             foreach ($emails as $email) {
@@ -128,17 +112,5 @@ class Sync
                 'back' => trans_choice(':count role|:count roles', $tookBack),
             ])
             .($added ? ' '.trans_choice('Made :count new account.|Made :count new accounts.', $added) : '');
-    }
-
-    /** @return array<string, true> */
-    private function students(): array
-    {
-        $students = Person::where('kind', 'student')->pluck('email')->all();
-
-        if (Setting::get('broker.refreshed_at') === null) {
-            throw new RuntimeException(__('The broker hasn\'t loaded the directory, so students can\'t be skipped. Refresh the broker first, or turn off skipping students.'));
-        }
-
-        return array_fill_keys(array_map('strtolower', $students), true);
     }
 }

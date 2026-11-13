@@ -92,18 +92,6 @@
             @endcan
         </p>
 
-        @if (\TornadoEngine\AccessGoogle\Sync::brokerInstalled())
-            <form method="POST" action="{{ route('access.google.students') }}" class="flex flex-wrap items-center justify-between gap-3">
-                @csrf
-                <label class="inline-flex min-h-11 items-center gap-2">
-                    <input type="hidden" name="skip_students" value="0">
-                    <input type="checkbox" name="skip_students" value="1" class="rounded text-indigo-600 border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-indigo-500" @checked(\TornadoEngine\AccessGoogle\Sync::skipsStudents()) onchange="this.form.submit()">
-                    <span>{{ __('Never give roles to students (the broker\'s student rules decide who they are)') }}</span>
-                </label>
-                <noscript><x-secondary-button type="submit">{{ __('Save') }}</x-secondary-button></noscript>
-            </form>
-        @endif
-
         <form method="POST" action="{{ route('access.google.sync') }}" class="flex justify-end">
             @csrf
             <x-primary-button>{{ __('Sync now') }}</x-primary-button>
