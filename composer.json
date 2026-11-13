@@ -1,0 +1,29 @@
+{
+    "name": "tornado-engine/access-google",
+    "description": "Tornado Engine module: gives roles to Google users, Google Groups and OUs, and keeps them in sync nightly.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^13.0",
+        "tornado-engine/access": ">=0.2",
+        "tornado-engine/gam": ">=0.5",
+        "tornado-engine/cron": ">=0.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "TornadoEngine\\AccessGoogle\\": "src/"
+        }
+    },
+    "extra": {
+        "tornado": {
+            "name": "Access-Google",
+            "core": ">=0.6",
+            "core-module": false,
+            "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider"
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    }
+}
