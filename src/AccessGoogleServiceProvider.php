@@ -17,6 +17,9 @@ class AccessGoogleServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/access-google.php');
 
         $access->tab('access.google.index', __('Google'), active: 'access.google.*');
+        if (method_exists($access, 'userAction')) {
+            $access->userAction('access-google::exclude-button');
+        }
 
         $this->callAfterResolving(Cron::class, function (Cron $cron) {
             $cron->job(self::JOB, __('Sync roles from Google'), fn () => app(Sync::class)->run(),

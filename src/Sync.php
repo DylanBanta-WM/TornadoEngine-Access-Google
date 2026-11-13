@@ -5,6 +5,7 @@ namespace TornadoEngine\AccessGoogle;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use TornadoEngine\Access\Access;
+use TornadoEngine\AccessGoogle\Models\Exclusion;
 use TornadoEngine\AccessGoogle\Models\Rule;
 use TornadoEngine\Gam\Gam;
 
@@ -16,6 +17,26 @@ use TornadoEngine\Gam\Gam;
 class Sync
 {
     public function __construct(private Gam $gam, private Access $access) {}
+
+    /**
+     * Takes back the roles the sync gave this person (roles given by hand stay).
+     */
+    public static function takeBack(User $user): int
+    {
+        return DB::transaction(function () use ($user) {
+            $roles = DB::table('access_google_grants')->where('user_id', $user->id)->pluck('role_id');
+            DB::table('access_role_user')->where('user_id', $user->id)->whereIn('role_id', $roles)->delete();
+            DB::table('access_google_grants')->where('user_id', $user->id)->delete();
+
+            return $roles->count();
+        });
+    }
+
+    /** Whether the sync made or gave roles to this person. */
+    public static function imported(User $user): bool
+    {
+        return DB::table('access_google_grants')->where('user_id', $user->id)->exists();
+    }
 
     /**
      * @return string A summary, for example "312 people matched. Gave 4 roles, took back 1."
@@ -31,6 +52,8 @@ class Sync
             $people[$person['email']] = $person;
         }
 
+        $excluded = array_fill_keys(Exclusion::pluck('email')->all(), true);
+
         // Who should have each role: [role id => [email => true]].
         $wanted = [];
         $matched = [];
@@ -40,7 +63,7 @@ class Sync
                 'group' => $gam->groupMembers($rule->value),
                 'ou' => array_keys(array_filter($people, fn ($person) => $rule->coversOu($person['ou']))),
             };
-            $emails = array_filter($emails, fn ($email) => isset($people[$email]));
+            $emails = array_filter($emails, fn ($email) => isset($people[$email]) && ! isset($excluded[$email]));
 
             $matched[$rule->id] = count($emails);
             foreach ($emails as $email) {

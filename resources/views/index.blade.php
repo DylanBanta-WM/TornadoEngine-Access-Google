@@ -75,6 +75,27 @@
         @endif
     </x-settings-card>
 
+    <x-settings-card :title="__('Excluded')">
+        @if ($exclusions->isNotEmpty())
+            <ul class="divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
+                @foreach ($exclusions as $exclusion)
+                    <li class="flex flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                        <div class="min-w-0">
+                            <p class="break-all font-medium text-gray-900 dark:text-gray-100">{{ $exclusion->email }}</p>
+                            <p class="text-gray-600 dark:text-gray-400">{{ __($exclusion->reason) }} · {{ $exclusion->created_at->toFormattedDateString() }}@if ($exclusion->excludedBy) · {{ $exclusion->excludedBy->name }}@endif</p>
+                        </div>
+                        <form method="POST" action="{{ route('access.google.exclusions.destroy', $exclusion) }}" class="-ms-2 sm:ms-0">
+                            @csrf
+                            @method('DELETE')
+                            <button class="min-h-11 px-2 text-sm text-red-700 dark:text-red-400 underline">{{ __('Remove') }}</button>
+                        </form>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        @include('access-google::exclude-form')
+    </x-settings-card>
+
     <x-settings-card :title="__('Sync')">
         <p>
             @if ($settings->last_run_at)
