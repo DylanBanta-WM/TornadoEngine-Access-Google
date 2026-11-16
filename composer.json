@@ -20,7 +20,8 @@
             "name": "Access-Google",
             "core": ">=0.6",
             "core-module": false,
-            "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider"
+            "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider",
+            "settings": "/access/google"
         },
         "branch-alias": {
             "dev-main": "0.5.x-dev"
