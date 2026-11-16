@@ -6,7 +6,7 @@
     "require": {
         "php": "^8.4",
         "illuminate/support": "^13.0",
-        "tornado-engine/access": ">=0.4",
+        "tornado-engine/access": ">=0.5",
         "tornado-engine/gam": ">=0.5",
         "tornado-engine/cron": ">=0.4"
     },
@@ -23,7 +23,7 @@
             "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider"
         },
         "branch-alias": {
-            "dev-main": "0.4.x-dev"
+            "dev-main": "0.5.x-dev"
         }
     }
 }

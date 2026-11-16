@@ -6,8 +6,8 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use TornadoEngine\Access\Models\Exclusion;
 use TornadoEngine\Access\Models\Role;
-use TornadoEngine\AccessGoogle\Models\Exclusion;
 use TornadoEngine\AccessGoogle\Models\Rule;
 use TornadoEngine\Cron\Cron;
 use TornadoEngine\Cron\Models\CronJob;
@@ -172,19 +172,14 @@ class AccessGoogleTest extends TestCase
         // The Exclude button shows for imported people only.
         $this->actingAs($manager)->get('/access/users')->assertSeeInOrder(['ann@school.test', 'Exclude', 'Edit']);
 
-        $this->actingAs($manager)->post('/access/google/exclusions', ['email' => 'Ann@school.test', 'reason' => 'Employment ended'])->assertSessionHas('status');
+        $this->actingAs($manager)->post('/access/exclusions', ['email' => 'Ann@school.test', 'reason' => 'Employment ended'])->assertSessionHas('status');
         $this->assertSame(['Library'], $this->rolesOf('ann@school.test'), 'roles given by hand stay');
 
         $this->sync();
         $this->assertSame(['Library'], $this->rolesOf('ann@school.test'));
 
-        $this->actingAs($manager)->post('/access/google/exclusions', ['email' => 'svc-printer@school.test', 'reason' => 'other', 'other' => 'Copier scans'])->assertSessionHasNoErrors();
-        $this->actingAs($manager)->from('/access/google')->post('/access/google/exclusions', ['email' => 'x@school.test', 'reason' => 'other'])->assertSessionHasErrors('other');
-
-        $this->actingAs($manager)->get('/access/google')->assertSeeInOrder(['Excluded', 'ann@school.test', 'Employment ended', 'svc-printer@school.test', 'Copier scans']);
-
         // Removing the exclusion brings them back at the next sync.
-        $this->actingAs($manager)->delete('/access/google/exclusions/'.Exclusion::where('email', 'ann@school.test')->value('id'));
+        $this->actingAs($manager)->delete('/access/exclusions/'.Exclusion::where('email', 'ann@school.test')->value('id'));
         $this->sync();
         $this->assertSame(['Library', 'Teachers'], $this->rolesOf('ann@school.test'));
     }
