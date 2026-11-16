@@ -10,7 +10,16 @@
         <p class="rounded-md bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-800 dark:text-red-300">{{ $errors->first('sync') }}</p>
     @endif
 
+    @unless ($gamReady)
+        <div class="rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+            <p>{{ __('Google access reads Google through GAM, which isn\'t set up yet.') }}</p>
+        </div>
+    @endunless
+
     <x-settings-card :title="__('Roles from Google')">
+        @if (Route::has('docs.show'))
+            <p><a href="{{ route('docs.show', 'google-access') }}" class="font-medium text-indigo-600 dark:text-indigo-400 underline">{{ __('How to set up Google access') }}</a></p>
+        @endif
         @if ($rules->isNotEmpty())
             <ul class="divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
                 @foreach ($rules as $rule)

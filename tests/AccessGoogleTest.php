@@ -212,7 +212,10 @@ class AccessGoogleTest extends TestCase
         $this->actingAs($manager)->get('/access/google')
             ->assertOk()
             ->assertSee('Roles from Google')
-            ->assertSee('/Staff');
+            ->assertSee('/Staff')
+            ->assertSee('How to set up Google access')
+            ->assertSee('Google access reads Google through GAM, which isn', false);
+        $this->actingAs($manager)->get('/docs/google-access')->assertOk()->assertSee('Set up GAM');
     }
 
     public function test_only_people_who_manage_access_can_open_it(): void

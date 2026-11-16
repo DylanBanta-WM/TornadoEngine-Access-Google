@@ -5,6 +5,7 @@ namespace TornadoEngine\AccessGoogle;
 use Illuminate\Support\ServiceProvider;
 use TornadoEngine\Access\Access;
 use TornadoEngine\Cron\Cron;
+use TornadoEngine\Docs\Docs;
 
 class AccessGoogleServiceProvider extends ServiceProvider
 {
@@ -17,6 +18,10 @@ class AccessGoogleServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/access-google.php');
 
         $access->tab('access.google.index', __('Google'), active: 'access.google.*');
+
+        $this->callAfterResolving(Docs::class, function ($docs) {
+            $docs->add('google-access', __('Set up Google access'), 'access-google::docs.setup', order: 39);
+        });
 
         $this->callAfterResolving(Cron::class, function (Cron $cron) {
             $cron->job(self::JOB, __('Sync roles from Google'), fn () => app(Sync::class)->run(),

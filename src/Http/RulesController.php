@@ -28,7 +28,18 @@ class RulesController extends Controller
             'settings' => $cron->settings($job),
             'schedule' => $cron->scheduleFor($job),
             'domain' => GoogleSignIn::domain(),
+            'gamReady' => $this->gamReady(),
         ]);
+    }
+
+    /** Whether GAM can be used: its container is running and its files are uploaded. */
+    private function gamReady(): bool
+    {
+        try {
+            return app(Gam::class)->configured();
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function store(Request $request, Gam $gam): RedirectResponse
