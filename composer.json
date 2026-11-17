@@ -21,7 +21,8 @@
             "core": ">=0.6",
             "core-module": false,
             "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider",
-            "settings": "/access/google"
+            "settings": "/access/google",
+            "needs-setup": true
         },
         "branch-alias": {
             "dev-main": "0.7.x-dev"
