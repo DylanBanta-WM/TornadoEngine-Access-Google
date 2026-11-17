@@ -16,106 +16,110 @@
         </div>
     @endunless
 
-    <x-settings-card :title="__('Roles from Google')">
-        @if (Route::has('docs.show'))
-            <p><a href="{{ route('docs.show', 'google-access') }}" class="font-medium text-indigo-600 dark:text-indigo-400 underline">{{ __('How to set up Google access') }}</a></p>
-        @endif
-        @if ($rules->isNotEmpty())
-            <ul class="divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
-                @foreach ($rules as $rule)
-                    <li class="flex flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                        <div class="min-w-0">
-                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $rule->role->name }}
-                                @if ($rule->primary)
-                                    <span class="ms-1 rounded bg-indigo-50 dark:bg-indigo-900/50 px-1.5 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">{{ __('Primary') }}</span>
-                                @endif
-                            </p>
-                            <p class="break-all text-gray-600 dark:text-gray-400">
-                                {{ __(\TornadoEngine\AccessGoogle\Models\Rule::TYPES[$rule->type]) }}: <code class="font-mono">{{ $rule->value }}</code>@if ($rule->type === 'ou' && $rule->sub_ous) {{ __('and sub-OUs') }}@endif
-                            </p>
-                            @if ($rule->matched !== null)
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ trans_choice(':count person at the last sync|:count people at the last sync', $rule->matched) }}</p>
-                            @endif
+    <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <x-settings-card :title="__('Roles from Google')">
+                @if (Route::has('docs.show'))
+                    <p><a href="{{ route('docs.show', 'google-access') }}" class="font-medium text-indigo-600 dark:text-indigo-400 underline">{{ __('How to set up Google access') }}</a></p>
+                @endif
+                @if ($rules->isNotEmpty())
+                    <ul class="divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700">
+                        @foreach ($rules as $rule)
+                            <li class="grid grid-cols-1 gap-1 px-3 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_11rem] md:items-center md:gap-x-4 md:gap-y-0">
+                                <p class="font-medium text-gray-900 dark:text-gray-100 md:row-span-2">{{ $rule->role->name }}
+                                    @if ($rule->primary)
+                                        <span class="ms-1 rounded bg-indigo-50 dark:bg-indigo-900/50 px-1.5 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">{{ __('Primary') }}</span>
+                                    @endif
+                                </p>
+                                <p class="break-words text-gray-600 dark:text-gray-400">
+                                    {{ __(\TornadoEngine\AccessGoogle\Models\Rule::TYPES[$rule->type]) }}: <code class="font-mono">{{ $rule->value }}</code>@if ($rule->type === 'ou' && $rule->sub_ous) {{ __('and sub-OUs') }}@endif
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 md:col-start-2">
+                                    @if ($rule->matched !== null)
+                                        {{ trans_choice(':count person at the last sync|:count people at the last sync', $rule->matched) }}
+                                    @endif
+                                </p>
+                                <span class="-ms-2 flex md:col-start-3 md:row-span-2 md:row-start-1 md:ms-0 md:justify-end">
+                                    <form method="POST" action="{{ route('access.google.rules.primary', $rule) }}">
+                                        @csrf
+                                        <button class="min-h-11 px-2 text-sm text-gray-700 dark:text-gray-300 underline">{{ $rule->primary ? __('Not primary') : __('Make primary') }}</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('access.google.rules.destroy', $rule) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="min-h-11 px-2 text-sm text-red-700 dark:text-red-400 underline">{{ __('Remove') }}</button>
+                                    </form>
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @include('access::primary-missed', ['missed' => $missed])
+
+                @if ($roles->isEmpty())
+                    <p>{!! __('Make a role on the :roles tab first.', ['roles' => '<a href="'.route('access.roles.index').'" class="font-medium text-indigo-600 dark:text-indigo-400 underline">'.e(__('Roles')).'</a>']) !!}</p>
+                @else
+                    <form method="POST" action="{{ route('access.google.rules.store') }}" class="space-y-3" x-data="{ type: @js(old('type', 'group')) }">
+                        @csrf
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <div>
+                                <x-input-label for="role_id" :value="__('Role')" />
+                                <select id="role_id" name="role_id" class="{{ $select }}" required>
+                                    @foreach ($roles as $role)
+                                        <option value="{{ $role->id }}" @selected((int) old('role_id') === $role->id)>{{ $role->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <x-input-label for="type" :value="__('Given to')" />
+                                <select id="type" name="type" x-model="type" class="{{ $select }}">
+                                    @foreach (\TornadoEngine\AccessGoogle\Models\Rule::TYPES as $type => $label)
+                                        <option value="{{ $type }}">{{ __($label) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <x-input-label for="value" x-text="{ user: @js(__('Email address')), group: @js(__('Group address')), ou: @js(__('OU path')) }[type]">{{ __('Value') }}</x-input-label>
+                                <x-text-input id="value" name="value" class="mt-1 block w-full" type="text" :value="old('value')" required autocapitalize="off" spellcheck="false"
+                                              x-bind:placeholder="{{ Js::from($placeholders) }}[type]" />
+                            </div>
                         </div>
-                        <span class="-ms-2 flex shrink-0 sm:ms-0">
-                            <form method="POST" action="{{ route('access.google.rules.primary', $rule) }}">
-                                @csrf
-                                <button class="min-h-11 px-2 text-sm text-gray-700 dark:text-gray-300 underline">{{ $rule->primary ? __('Not primary') : __('Make primary') }}</button>
-                            </form>
-                            <form method="POST" action="{{ route('access.google.rules.destroy', $rule) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button class="min-h-11 px-2 text-sm text-red-700 dark:text-red-400 underline">{{ __('Remove') }}</button>
-                            </form>
-                        </span>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
+                        <x-input-error :messages="$errors->get('value')" />
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <label x-show="type === 'ou'" class="inline-flex min-h-11 items-center gap-2">
+                                <input type="hidden" name="sub_ous" value="0">
+                                <input type="checkbox" name="sub_ous" value="1" checked class="rounded text-indigo-600 border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-indigo-500">
+                                <span>{{ __('Include sub-OUs') }}</span>
+                            </label>
+                            <x-primary-button class="ms-auto">{{ __('Add rule') }}</x-primary-button>
+                        </div>
+                    </form>
+                @endif
+            </x-settings-card>
+        </div>
 
-        @include('access::primary-missed', ['missed' => $missed])
+        <x-settings-card :title="__('Sync')">
+            <p>
+                @if ($settings->last_run_at)
+                    {{ __('Last sync :time:', ['time' => $settings->last_run_at->diffForHumans()]) }}
+                    <span @class(['font-medium', 'text-green-700 dark:text-green-400' => $settings->last_status === 'ok', 'text-red-700 dark:text-red-400' => $settings->last_status !== 'ok'])>{{ $settings->last_status === 'ok' ? __('worked') : __('failed') }}</span>
+                    @if ($settings->last_message) — {{ $settings->last_message }}@endif
+                @else
+                    {{ __('Hasn\'t synced yet.') }}
+                @endif
+            </p>
+            <p class="text-gray-600 dark:text-gray-400">
+                {{ $settings->enabled ? __('Runs on its own: :when', ['when' => \TornadoEngine\Cron\Explain::describe($schedule)]) : __('The nightly sync is turned off.') }}
+                @can('administration')
+                    <a href="{{ route('administration.tab', 'cron') }}" class="font-medium text-indigo-600 dark:text-indigo-400 underline">{{ __('Change on Scheduled jobs') }}</a>
+                @endcan
+            </p>
 
-        @if ($roles->isEmpty())
-            <p>{!! __('Make a role on the :roles tab first.', ['roles' => '<a href="'.route('access.roles.index').'" class="font-medium text-indigo-600 dark:text-indigo-400 underline">'.e(__('Roles')).'</a>']) !!}</p>
-        @else
-            <form method="POST" action="{{ route('access.google.rules.store') }}" class="space-y-3" x-data="{ type: @js(old('type', 'group')) }">
+            <form method="POST" action="{{ route('access.google.sync') }}" class="flex justify-end">
                 @csrf
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div>
-                        <x-input-label for="role_id" :value="__('Role')" />
-                        <select id="role_id" name="role_id" class="{{ $select }}" required>
-                            @foreach ($roles as $role)
-                                <option value="{{ $role->id }}" @selected((int) old('role_id') === $role->id)>{{ $role->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <x-input-label for="type" :value="__('Given to')" />
-                        <select id="type" name="type" x-model="type" class="{{ $select }}">
-                            @foreach (\TornadoEngine\AccessGoogle\Models\Rule::TYPES as $type => $label)
-                                <option value="{{ $type }}">{{ __($label) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <x-input-label for="value" x-text="{ user: @js(__('Email address')), group: @js(__('Group address')), ou: @js(__('OU path')) }[type]">{{ __('Value') }}</x-input-label>
-                        <x-text-input id="value" name="value" class="mt-1 block w-full" type="text" :value="old('value')" required autocapitalize="off" spellcheck="false"
-                                      x-bind:placeholder="{{ Js::from($placeholders) }}[type]" />
-                    </div>
-                </div>
-                <x-input-error :messages="$errors->get('value')" />
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <label x-show="type === 'ou'" class="inline-flex min-h-11 items-center gap-2">
-                        <input type="hidden" name="sub_ous" value="0">
-                        <input type="checkbox" name="sub_ous" value="1" checked class="rounded text-indigo-600 border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-indigo-500">
-                        <span>{{ __('Include sub-OUs') }}</span>
-                    </label>
-                    <x-primary-button class="ms-auto">{{ __('Add rule') }}</x-primary-button>
-                </div>
+                <x-primary-button>{{ __('Sync now') }}</x-primary-button>
             </form>
-        @endif
-    </x-settings-card>
-
-    <x-settings-card :title="__('Sync')">
-        <p>
-            @if ($settings->last_run_at)
-                {{ __('Last sync :time:', ['time' => $settings->last_run_at->diffForHumans()]) }}
-                <span @class(['font-medium', 'text-green-700 dark:text-green-400' => $settings->last_status === 'ok', 'text-red-700 dark:text-red-400' => $settings->last_status !== 'ok'])>{{ $settings->last_status === 'ok' ? __('worked') : __('failed') }}</span>
-                @if ($settings->last_message) — {{ $settings->last_message }}@endif
-            @else
-                {{ __('Hasn\'t synced yet.') }}
-            @endif
-        </p>
-        <p class="text-gray-600 dark:text-gray-400">
-            {{ $settings->enabled ? __('Runs on its own: :when', ['when' => \TornadoEngine\Cron\Explain::describe($schedule)]) : __('The nightly sync is turned off.') }}
-            @can('administration')
-                <a href="{{ route('administration.tab', 'cron') }}" class="font-medium text-indigo-600 dark:text-indigo-400 underline">{{ __('Change on Scheduled jobs') }}</a>
-            @endcan
-        </p>
-
-        <form method="POST" action="{{ route('access.google.sync') }}" class="flex justify-end">
-            @csrf
-            <x-primary-button>{{ __('Sync now') }}</x-primary-button>
-        </form>
-    </x-settings-card>
+        </x-settings-card>
+    </div>
 </x-admin-layout>
