@@ -18,6 +18,7 @@
     "extra": {
         "tornado": {
             "name": "Access-Google",
+            "prompt": "Gives people roles from Google users, groups and OUs (through GAM).",
             "core": ">=0.21",
             "core-module": false,
             "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider",
