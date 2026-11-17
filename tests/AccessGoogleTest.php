@@ -196,6 +196,27 @@ class AccessGoogleTest extends TestCase
         $this->assertSame(['Office'], $this->rolesOf('ann@school.test'));
     }
 
+    public function test_people_a_roles_primary_rule_missed_are_listed(): void
+    {
+        $teachers = Role::create(['name' => 'Teachers']);
+        $group = Rule::create(['role_id' => $teachers->id, 'type' => 'group', 'value' => 'teachers@school.test']);
+        Rule::create(['role_id' => $teachers->id, 'type' => 'ou', 'value' => '/Staff', 'sub_ous' => true]);
+        $manager = $this->manager();
+
+        $this->actingAs($manager)->post("/access/google/rules/{$group->id}/primary");
+        $this->assertTrue($group->fresh()->primary);
+        $this->sync();
+
+        $this->actingAs($manager)->get('/access/google')
+            ->assertSee('People the primary rule for Teachers missed (1)')
+            ->assertSee('The primary rule is the Google Group teachers@school.test.')
+            ->assertSeeInOrder(['Bob Office', 'bob@school.test', 'In OU /Staff/Office.', 'Caught by the OU /Staff.']);
+
+        // Not primary: nothing to compare.
+        $this->actingAs($manager)->post("/access/google/rules/{$group->id}/primary");
+        $this->actingAs($manager)->get('/access/google')->assertDontSee('People the primary rule');
+    }
+
     public function test_rules_are_checked_with_google_before_theyre_added(): void
     {
         $role = Role::create(['name' => 'Teachers']);

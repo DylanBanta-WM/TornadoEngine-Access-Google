@@ -10,5 +10,6 @@ Route::middleware(['web', 'auth', 'can:access.manage'])
         Route::get('/', [RulesController::class, 'index'])->name('index');
         Route::post('/rules', [RulesController::class, 'store'])->name('rules.store');
         Route::delete('/rules/{rule}', [RulesController::class, 'destroy'])->name('rules.destroy');
+        Route::post('/rules/{rule}/primary', [RulesController::class, 'primary'])->name('rules.primary');
         Route::post('/sync', [RulesController::class, 'sync'])->name('sync');
     });
