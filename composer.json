@@ -23,7 +23,8 @@
             "core-module": false,
             "provider": "TornadoEngine\\AccessGoogle\\AccessGoogleServiceProvider",
             "settings": "/access/google",
-            "needs-setup": true
+            "needs-setup": true,
+            "setup-done": "TornadoEngine\\AccessGoogle\\Models\\Rule@configured"
         },
         "branch-alias": {
             "dev-main": "0.8.x-dev"

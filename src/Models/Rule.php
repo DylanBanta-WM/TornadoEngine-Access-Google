@@ -12,6 +12,12 @@ use TornadoEngine\Access\Models\Role;
  */
 class Rule extends Model
 {
+    /** Set up once there's a rule (for the module's "setup-done"). */
+    public static function configured(): bool
+    {
+        return static::query()->exists();
+    }
+
     protected $table = 'access_google_rules';
 
     protected $fillable = ['role_id', 'type', 'value', 'sub_ous', 'primary', 'matched'];
